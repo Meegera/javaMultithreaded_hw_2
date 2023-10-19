@@ -8,11 +8,28 @@ public class Main {
 
     public static void main(String[] args) {
         int countThreads = 100;
-        String route;
-        for (int i = 0; i < countThreads; i++) {
-            new Thread(() -> {
+
+        Thread maxFrequencyThread = new Thread(() -> {
+            while (!Thread.interrupted()) {
                 synchronized (sizeToFreq) {
-                    //route = generateRoute("RLRFR", countThreads);
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    List<Map.Entry<Integer, Integer>> sortedList = sortMap(sizeToFreq);
+
+                    System.out.println("Текущий лидер среди частот: " + sortedList.get(0).getKey() + "( встретился " +
+                            +sortedList.get(0).getValue() + " раз)");
+                }
+            }
+        });
+        maxFrequencyThread.start();
+
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < countThreads; i++) {
+            Thread thread = new Thread(() -> {
+                synchronized (sizeToFreq) {
                     int countR = (int) generateRoute("RLRFR", countThreads)
                             .chars()
                             .filter(x -> x == (int) 'R')
@@ -22,23 +39,22 @@ public class Main {
                     } else {
                         sizeToFreq.put(countR, 1);
                     }
+                    sizeToFreq.notify(); // Уведомление после каждой итерации
                 }
-            }).start();
+            });
+            threads.add(thread);
+            thread.start();
         }
 
-
-        List<Map.Entry<Integer, Integer>> sortedList = sizeToFreq.entrySet()
-                .stream()
-                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                .collect(Collectors.toList());
-
-        System.out.println("Самое частое количество повторений " + sortedList.get(0).getKey() + " (встретилось " +
-                sortedList.get(0).getValue() + " раз)");
-
-        System.out.println("Другие размеры:");
-        for (int i = 1; i < sortedList.size(); i++) {
-            System.out.println("- " + sortedList.get(i).getKey() + " (" + sortedList.get(i).getValue() + " раз)");
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        // Прерывание потока, отслеживающего максимум
+        maxFrequencyThread.interrupt();
     }
 
     public static String generateRoute(String letters, int length) {
@@ -48,5 +64,12 @@ public class Main {
             route.append(letters.charAt(random.nextInt(letters.length())));
         }
         return route.toString();
+    }
+
+    public static List<Map.Entry<Integer, Integer>> sortMap(Map<Integer, Integer> map) {
+        return map.entrySet()
+                .stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .collect(Collectors.toList());
     }
 }
