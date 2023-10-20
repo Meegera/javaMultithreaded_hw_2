@@ -7,9 +7,9 @@ public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
-        int countThreads = 100;
-
+        int countThreads = 1000;
         Thread maxFrequencyThread = new Thread(() -> {
+            List<Map.Entry<Integer, Integer>> sortedList;
             while (!Thread.interrupted()) {
                 synchronized (sizeToFreq) {
                     try {
@@ -17,11 +17,11 @@ public class Main {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    List<Map.Entry<Integer, Integer>> sortedList = sortMap(sizeToFreq);
-
-                    System.out.println("Текущий лидер среди частот: " + sortedList.get(0).getKey() + "( встретился " +
-                            +sortedList.get(0).getValue() + " раз)");
+                    sortedList = sortMap(sizeToFreq);
                 }
+                System.out.println("Текущий лидер среди частот: " + sortedList.get(0).getKey() + "( встретился " +
+                        +sortedList.get(0).getValue() + " раз)");
+
             }
         });
         maxFrequencyThread.start();
@@ -29,11 +29,11 @@ public class Main {
         List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < countThreads; i++) {
             Thread thread = new Thread(() -> {
+                int countR = (int) generateRoute("RLRFR", countThreads)
+                        .chars()
+                        .filter(x -> x == (int) 'R')
+                        .count();
                 synchronized (sizeToFreq) {
-                    int countR = (int) generateRoute("RLRFR", countThreads)
-                            .chars()
-                            .filter(x -> x == (int) 'R')
-                            .count();
                     if (sizeToFreq.containsKey(countR)) {
                         sizeToFreq.put(countR, sizeToFreq.get(countR) + 1);
                     } else {
