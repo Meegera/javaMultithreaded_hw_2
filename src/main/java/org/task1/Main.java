@@ -11,12 +11,11 @@ public class Main {
         String route;
         for (int i = 0; i < countThreads; i++) {
             new Thread(() -> {
+                int countR = (int) generateRoute("RLRFR", countThreads)
+                        .chars()
+                        .filter(x -> x == (int) 'R')
+                        .count();
                 synchronized (sizeToFreq) {
-                    //route = generateRoute("RLRFR", countThreads);
-                    int countR = (int) generateRoute("RLRFR", countThreads)
-                            .chars()
-                            .filter(x -> x == (int) 'R')
-                            .count();
                     if (sizeToFreq.containsKey(countR)) {
                         sizeToFreq.put(countR, sizeToFreq.get(countR) + 1);
                     } else {
